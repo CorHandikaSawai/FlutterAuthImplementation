@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/firebase_options.dart';
+import 'package:my_app/screens/auth_screen.dart';
 import 'package:my_app/screens/sign_in_screen.dart';
 import 'package:my_app/services/user_service.dart';
 import 'package:provider/provider.dart';
@@ -27,9 +27,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData.dark(),
-      initialRoute: SignInScreen.routeName,
-      home: const MyHomePage(title: 'Flutter Demo Authentication'),
+      initialRoute: '/',
       routes: {
+        AuthScreen.routeName: (context) => const AuthScreen(),
         SignInScreen.routeName: (context) => const SignInScreen(),
       },
     );
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-  static const routeName = '/';
+  static const routeName = '/homepage';
   final String title;
 
   @override
@@ -48,11 +48,21 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+    final _userService = Provider.of<UserService>(context);
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
       body: Container(
         child: ElevatedButton(
-          onPressed: () async {
-            await FirebaseAuth.instance.signOut();
+          onPressed: () {
+            _userService.signOutUser();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SignInScreen(),
+              ),
+            );
           },
           child: Text('Sign Out'),
         ),

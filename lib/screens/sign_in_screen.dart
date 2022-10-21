@@ -2,6 +2,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/main.dart';
+import 'package:my_app/screens/auth_screen.dart';
 import 'package:my_app/services/user_service.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final _userService = Provider.of<UserService>(context);
+    final userService = Provider.of<UserService>(context);
     final screenSize = MediaQuery.of(context).size;
     return Material(
       child: SafeArea(
@@ -74,16 +75,15 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         const SizedBox(height: 18.0),
                         ElevatedButton(
-                          onPressed: () async {
+                          onPressed: () {
                             setState(() {
                               _showLoading = true;
                             });
                             if (_formKey.currentState!.validate()) {
-                              final res = await _userService.createNewUser(
+                              userService.createNewUser(
                                 _emailFieldController.text.toString(),
                                 _passwordFieldController.text.toString(),
                               );
-                              print(res);
                             }
                             setState(() {
                               _showLoading = false;
@@ -93,25 +93,26 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         const SizedBox(height: 18.0),
                         ElevatedButton(
-                          onPressed: () async {
+                          onPressed: () {
                             setState(() {
                               _showLoading = true;
                             });
                             if (_formKey.currentState!.validate()) {
-                              final res = await _userService.signInUser(
+                              userService
+                                  .signInUser(
                                 _emailFieldController.text.toString(),
                                 _passwordFieldController.text.toString(),
-                              );
-                              if (res == 'login') {
-                                //TODO: Fix this blue line, create a function for SignIn and create user.
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        MyHomePage(title: 'Signed In'),
-                                  ),
-                                );
-                              }
+                              )
+                                  .then((value) {
+                                if (value) {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AuthScreen(),
+                                    ),
+                                  );
+                                }
+                              });
                             }
                             setState(() {
                               _showLoading = false;

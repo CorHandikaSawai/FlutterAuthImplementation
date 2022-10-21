@@ -3,8 +3,17 @@ import 'package:flutter/material.dart';
 
 class UserService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  List<String> erroMessage = [];
+  bool _isUserSignedIn = false;
+  User? get currentUser {
+    if (_auth.currentUser!.emailVerified) {
+      return _auth.currentUser;
+    }
+    return null;
+  }
 
-  Future<String> createNewUser(String email, String password) async {
+  Future<void> createNewUser(String email, String password) async {
+    String res;
     try {
       await _auth
           .createUserWithEmailAndPassword(email: email, password: password)
@@ -13,29 +22,32 @@ class UserService extends ChangeNotifier {
       });
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        return 'Password is too weak';
+        res = 'Password is too weak';
       } else if (e.code == 'email-already-in-use') {
-        return 'Email already in use';
+        res = 'Email already in use';
       } else {
-        return e.code.toString();
+        res = e.code.toString();
       }
+      erroMessage.add(res);
     }
-    return 'Successful. Please verify your email!';
   }
 
-  Future<String> signInUser(String email, String password) async {
-    late String _res;
+  //TODO: Error is user has not verified email.
+
+  Future<bool> signInUser(String email, String password) async {
+    String res;
     try {
       await _auth
           .signInWithEmailAndPassword(email: email, password: password)
           .then(
         (value) async {
           if (!(value.user!.emailVerified)) {
-            await value.user!.sendEmailVerification();
-            _res = 'Please verify your email!'; //TODO: Maybe I can use something else
-          }
-          else if(value.user!.emailVerified){
-            _res = 'login';
+            await value.user!.sendEmailVerification().then((value) {
+              res = 'Please verify your email!';
+              _isUserSignedIn = false;
+            });
+          } else if (value.user!.emailVerified) {
+            _isUserSignedIn = true;
           }
         },
       );
@@ -44,11 +56,16 @@ class UserService extends ChangeNotifier {
           e.code == 'user-disabled' ||
           e.code == 'user-not-found' ||
           e.code == 'wrong-password') {
-        _res = 'Invalid email or password';
+        res = 'Invalid email or password';
       } else {
-        _res = e.code.toString();
+        res = e.code.toString();
       }
+      erroMessage.add(res);
     }
-    return _res;
+    return _isUserSignedIn;
+  }
+
+  signOutUser() async {
+    await _auth.signOut();
   }
 }
